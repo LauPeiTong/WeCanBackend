@@ -15,6 +15,7 @@ class User(AbstractUser):
     address = models.TextField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
+    image_url = models.URLField(blank=True, null=True)
 
 
 class Vendor(User):

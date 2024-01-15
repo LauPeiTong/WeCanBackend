@@ -11,14 +11,17 @@ class IsVendorPermission(permissions.BasePermission):
             return True
 
         # Write permissions are only allowed to the vendor of the product
-        return obj.vendor == request.user and request.user.role == 'V'
+        return request.user.role == 'V'
 
     def has_permission(self, request, view):
         # Allow users with role 'V' to create objects
+        if request.method in permissions.SAFE_METHODS:
+            return True
         return request.user.role == 'V'
     
+    def has_object_update_permission(self, request, view, obj):
+        # Allow updating only if the user is a vendor and owns the product
+        # print(request.user.id)
+        # print(obj.vendor.id)
+        return request.user.role == 'V' and obj.vendor.id == request.user.id
 
-class IsCustomerPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        # Check if the user has the role 'C' (Customer)
-        return request.user.role == 'C'
