@@ -3,6 +3,8 @@
 from django.db import models
 from users.models import Vendor
 from django.utils import timezone
+from datetime import datetime
+import pytz
 
 
 class Product(models.Model):
@@ -21,6 +23,7 @@ class Product(models.Model):
     expired_date = models.DateTimeField()
     image_url = models.URLField(blank=True, null=True)
     nutrients = models.TextField(blank=True, null=True)
+    quantity = models.PositiveIntegerField(default=1)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Within Shelf Life')
     
     @property
@@ -32,8 +35,14 @@ class Product(models.Model):
 
     @property
     def time_left(self):
-        now = timezone.now()
-        time_difference = self.expired_date - now
+        kl_timezone = pytz.timezone('Asia/Kuala_Lumpur')
+        expired_date = kl_timezone.localize(datetime.strptime(self.expired_date, '%Y-%m-%dT%H:%M:%S'))
+
+        # Get the current datetime in Kuala Lumpur timezone
+        now = datetime.now(kl_timezone)
+
+        # Calculate the time difference
+        time_difference = expired_date - now
 
         # Check if the product is expired
         if time_difference.total_seconds() <= 0:

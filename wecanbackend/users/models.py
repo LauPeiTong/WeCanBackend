@@ -13,6 +13,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=15, choices=CHOICES)
     phone = models.CharField(max_length=15, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
+    city = models.TextField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
     image_url = models.URLField(blank=True, null=True)
@@ -22,6 +23,7 @@ class Vendor(User):
     # additional fields specific to vendors
     tags = models.JSONField(default=list)  # Storing tags as a list of strings
     rating = models.FloatField(default=0.0)
+    display_name = models.CharField(max_length=255)
 
     def distance_to_customer(self, customer_latitude, customer_longitude):
         vendor_location = (self.latitude, self.longitude)

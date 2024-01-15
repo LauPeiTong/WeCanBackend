@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'role', 'password', 'phone', 'address', 'image_url', 'latitude', 'longitude']
+        fields = ['username', 'email', 'role', 'password', 'phone', 'address', 'city', 'image_url', 'latitude', 'longitude']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
@@ -30,10 +30,11 @@ class UserSerializer(serializers.ModelSerializer):
 class VendorSerializer(UserSerializer):
     tags = serializers.ListField(child=serializers.CharField(), write_only=True, required=False)
     rating = serializers.FloatField(default=0.0)
+    display_name = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = Vendor
-        fields = UserSerializer.Meta.fields + ['tags', 'rating']
+        fields = UserSerializer.Meta.fields + ['tags', 'rating', 'display_name']
 
     def create(self, validated_data):
         # Extract and remove 'tags' from the validated_data
