@@ -8,6 +8,8 @@ router = DefaultRouter()
 router.register(r'', ProductViewSet, basename='product')
 router.register(r'vendor/(?P<vendor_id>\d+)', VendorProductsViewSet, basename='vendor-products')
 
+
 urlpatterns = [
     path('', include(router.urls)),
+    # path('category/', ProductsByCategoryView.as_view(), name='products-by-category'),
 ]

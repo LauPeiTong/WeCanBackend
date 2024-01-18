@@ -7,6 +7,8 @@ from .models import Product
 
 class ProductSerializer(serializers.ModelSerializer):
     # vendor = VendorSerializer()
+    time_left = serializers.SerializerMethodField()
+    price = serializers.ReadOnlyField()
     
     class Meta:
         model = Product

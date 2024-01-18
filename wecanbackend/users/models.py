@@ -10,6 +10,7 @@ class User(AbstractUser):
         ('A', 'Admin')
     )
 
+    email = models.EmailField(unique=True)
     role = models.CharField(max_length=15, choices=CHOICES)
     phone = models.CharField(max_length=15, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
@@ -20,10 +21,15 @@ class User(AbstractUser):
 
 
 class Vendor(User):
+    CHOICES = (
+        ('Restaurant', 'Restaurant'),
+        ('Convenient Store', 'Convenient Store')
+    )
     # additional fields specific to vendors
     tags = models.JSONField(default=list)  # Storing tags as a list of strings
     rating = models.FloatField(default=0.0)
     display_name = models.CharField(max_length=255)
+    category = models.CharField(max_length=255, choices=CHOICES)
 
     def distance_to_customer(self, customer_latitude, customer_longitude):
         vendor_location = (self.latitude, self.longitude)

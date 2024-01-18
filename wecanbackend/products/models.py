@@ -25,6 +25,7 @@ class Product(models.Model):
     nutrients = models.TextField(blank=True, null=True)
     quantity = models.PositiveIntegerField(default=1)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Within Shelf Life')
+    category = models.CharField(max_length=255,default='Food')
     
     @property
     def price(self):
@@ -32,11 +33,12 @@ class Product(models.Model):
         discounted_amount = self.original_price * (self.discount / 100)
         discounted_price = self.original_price - discounted_amount
         return discounted_price
-
+    
     @property
     def time_left(self):
         kl_timezone = pytz.timezone('Asia/Kuala_Lumpur')
-        expired_date = kl_timezone.localize(datetime.strptime(self.expired_date, '%Y-%m-%dT%H:%M:%S'))
+        # expired_date = kl_timezone.localize(datetime.strptime(self.expired_date, '%Y-%m-%dT%H:%M:%S'))
+        expired_date = self.expired_date
 
         # Get the current datetime in Kuala Lumpur timezone
         now = datetime.now(kl_timezone)
@@ -44,27 +46,27 @@ class Product(models.Model):
         # Calculate the time difference
         time_difference = expired_date - now
 
-        # Check if the product is expired
+        # Update the status based on the current time
+        new_status = ''
         if time_difference.total_seconds() <= 0:
-            return {
-                'hours': 0,
-                'days': 0,
-                'status': 'Expired'
-            }
-        # Check if the product is near expiry (less than 1 day)
+            new_status = 'Expired'
         elif time_difference.total_seconds() < 86400:  # 86400 seconds in a day
-            return {
-                'hours': time_difference.total_seconds() // 3600,
-                'days': time_difference.days,
-                'status': 'Near Expiry'
-            }
+            new_status = 'Near Expiry'
         else:
-            return {
-                'hours': time_difference.total_seconds() // 3600,
-                'days': time_difference.days,
-                'status': 'Within Shelf Life'
-            }
+            new_status = 'Within Shelf Life'
 
+        # Check if the status has changed before saving
+        if self.id and self.status != new_status:
+            self.status = new_status
+            self.save()
+
+        return {
+            'hours': time_difference.total_seconds() // 3600,
+            'days': time_difference.days,
+            'status': new_status
+        }
+
+    
     def save(self, *args, **kwargs):
         # Automatically set the status when saving a new product
         if not self.id:

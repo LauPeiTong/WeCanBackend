@@ -14,6 +14,7 @@ class Order(models.Model):
         ('Pending', 'Pending'),
         ('Processing', 'Processing'),
         ('Delivering', 'Delivering'),
+        ('Ready to Pick-up', 'Ready to Pick-up'),
         ('Completed', 'Completed'),
         ('Cancelled', 'Cancelled'),
     ]
@@ -23,6 +24,7 @@ class Order(models.Model):
     
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     tax = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -33,11 +35,16 @@ class Order(models.Model):
 
     def calculate_total_price(self):
         # Calculate total price based on order items, fees, and taxes
+        subtotal = 0
         total_price = 0
         for item in self.order_items.all():
-            total_price += item.product.price * item.quantity
-        print(total_price)
-        total_price += self.delivery_fee + self.tax
+            subtotal += item.product.price * item.quantity
+        self.subtotal = subtotal
+        
+        if self.delivery_or_pickup == 'Delivery':
+            total_price = self.delivery_fee + (self.tax * self.subtotal) + self.subtotal
+        else:
+            total_price = self.tax * self.subtotal + self.subtotal
         self.total_price = total_price
 
 

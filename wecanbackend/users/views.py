@@ -14,6 +14,9 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import permission_classes, authentication_classes
 from rest_framework.authentication import TokenAuthentication
+from django.contrib.auth import authenticate
+from rest_framework import viewsets
+
 import requests
 
 
@@ -78,10 +81,10 @@ class UserRegistrationView(APIView):
 
 class UserLoginView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        username = request.data.get('username')
+        email = request.data.get('email')
         password = request.data.get('password')
 
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, email=email, password=password)
         if user is not None:
             login(request, user)
             token, created = Token.objects.get_or_create(user=user)
@@ -99,7 +102,7 @@ class UserLoginView(ObtainAuthToken):
                 return Response({'token': token.key, 'username': user.username, 'role': user.role})
 
         else:
-            return Response({'message': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 @authentication_classes([TokenAuthentication])
@@ -139,6 +142,9 @@ class VendorListView(APIView):
 
         # Get tags from the request query parameters
         tags = self.request.query_params.get('tags')
+        type = request.query_params.get('type', None)
+        category = self.request.query_params.get('category')
+
         if tags:
             tag_list = tags.split('-') if '-' in tags else [tags]
             # Using Q objects to perform case-insensitive search in JSONField
@@ -149,9 +155,13 @@ class VendorListView(APIView):
                 query |= q_object
 
             vendors = Vendor.objects.filter(query)
+
         else:
             vendors =  Vendor.objects.all()
 
+        if category:
+            vendors = vendors.filter(category=category)
+    
         # Calculate distance for each vendor and include it in the serialized data
         serialized_data = []
         for vendor in vendors:
@@ -165,7 +175,15 @@ class VendorListView(APIView):
             vendor_data['distance'] = distance
             vendor_data['latitude'] = vendor.latitude
             vendor_data['longitude'] = vendor.longitude
-            vendor_data['tags'] = vendor.tags
-            serialized_data.append(vendor_data)
 
-        return Response(serialized_data)
+            if type == 'near':
+                if distance and distance <= 5:
+                    serialized_data.append(vendor_data)
+            else:
+                serialized_data.append(vendor_data)
+        
+        # Sort the serialized data by distance in ascending order
+        sorted_data = sorted(serialized_data, key=lambda x: x['distance'] if x['distance'] is not None else float('inf'))
+
+        return Response(sorted_data)
+

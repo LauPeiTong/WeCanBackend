@@ -4,14 +4,14 @@ from django.contrib.auth import get_user_model
 
 
 class UserSerializer(serializers.ModelSerializer):
-    phone = serializers.CharField(write_only=True, required=False)
-    address = serializers.CharField(write_only=True, required=False)
+    phone = serializers.CharField(required=False)
+    address = serializers.CharField(required=False)
     latitude = serializers.FloatField(write_only=True, required=False)
     longitude = serializers.FloatField(write_only=True, required=False)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'role', 'password', 'phone', 'address', 'city', 'image_url', 'latitude', 'longitude']
+        fields = ['id', 'username', 'email', 'role', 'password', 'phone', 'address', 'city', 'image_url', 'latitude', 'longitude']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
@@ -28,13 +28,14 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class VendorSerializer(UserSerializer):
-    tags = serializers.ListField(child=serializers.CharField(), write_only=True, required=False)
+    tags = serializers.ListField(child=serializers.CharField(), required=False)
     rating = serializers.FloatField(default=0.0)
-    display_name = serializers.CharField(write_only=True, required=False)
+    display_name = serializers.CharField(required=False)
+    category = serializers.CharField(required=False)
 
     class Meta:
         model = Vendor
-        fields = UserSerializer.Meta.fields + ['tags', 'rating', 'display_name']
+        fields = UserSerializer.Meta.fields + ['tags', 'rating', 'display_name', 'category']
 
     def create(self, validated_data):
         # Extract and remove 'tags' from the validated_data

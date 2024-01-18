@@ -67,7 +67,8 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'wecanbackend.urls'
 CORS_URLS_REGEX = r"^/api/.*"
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'https://wecan-user.netlify.app'
 ]
 
 if DEBUG:
@@ -169,6 +170,12 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 10
 }
+
+AUTHENTICATION_BACKENDS = [
+    'users.authentication.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',  # Include the default backend as well
+]
+
 
 # environment variables -> django-dotenv -> reads .env
 ALGOLIA = {
