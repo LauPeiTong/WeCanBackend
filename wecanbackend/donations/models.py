@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import Customer
-
+from orders.models import Order
 
 class Donation(models.Model):
     TYPE_CHOICES = [
@@ -13,3 +13,6 @@ class Donation(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='Points')
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, null=True, blank=True)
+
+    

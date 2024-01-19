@@ -24,7 +24,6 @@ class CustomerOrderItemSerializer(serializers.ModelSerializer):
         fields = ['product', 'quantity']
 
 
-
 class OrderSerializer(serializers.ModelSerializer):
     products = OrderItemSerializer(many=True, write_only=True)
 
@@ -41,6 +40,9 @@ class OrderSerializer(serializers.ModelSerializer):
             quantity = item_data['quantity']
             product = Product.objects.get(id=product.id)
             OrderItem.objects.create(order=order, product=product, quantity=quantity)
+
+            product.quantity -= quantity
+            product.save()
         
         order.calculate_total_price()
         order.save()

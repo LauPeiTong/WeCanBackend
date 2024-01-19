@@ -6,8 +6,8 @@ from django.contrib.auth import get_user_model
 class UserSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(required=False)
     address = serializers.CharField(required=False)
-    latitude = serializers.FloatField(write_only=True, required=False)
-    longitude = serializers.FloatField(write_only=True, required=False)
+    latitude = serializers.FloatField(required=False)
+    longitude = serializers.FloatField(required=False)
 
     class Meta:
         model = User

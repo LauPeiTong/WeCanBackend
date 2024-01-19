@@ -8,6 +8,7 @@ from products.models import Product
 from faker import Faker
 from datetime import datetime, timedelta
 from geopy.geocoders import Nominatim
+import pytz
 
 fake = Faker()
 
@@ -16,7 +17,7 @@ tag_choices = ['Halal', 'Western', 'Chinese', 'Menu Rahmah', 'Free Delivery']
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        file_path = os.path.join(os.path.dirname(__file__), 'data', 'info_menu.json')
+        file_path = os.path.join(os.path.dirname(__file__), 'data', 'info_menu_supermarket.json')
 
         with open(file_path, 'r') as file:
             data = json.load(file)
@@ -65,7 +66,7 @@ class Command(BaseCommand):
                     image_url=vendor['hero_listing_image'],
                     rating=vendor['rating'],
                     tags=self.generate_random_tags(),
-                    category='Restaurant'
+                    category='Supermarket'
                 )
 
                 new_vendor_2 = Vendor.objects.create(
@@ -82,7 +83,7 @@ class Command(BaseCommand):
                     image_url=vendor['hero_image'],
                     rating=vendor['rating'],
                     tags=self.generate_random_tags(),
-                    category='Restaurant'
+                    category='Supermarket'
                 )
 
                 new_vendor_3 = Vendor.objects.create(
@@ -99,7 +100,7 @@ class Command(BaseCommand):
                     image_url=vendor['hero_listing_image'],
                     rating=vendor['rating'],
                     tags=self.generate_random_tags(),
-                    category='Restaurant'
+                    category='Supermarket'
                 )
 
                 new_vendor.set_password('testing/123')
@@ -115,6 +116,7 @@ class Command(BaseCommand):
 
                     for i, p in enumerate(product['products']):
                         # Check if the index is less than half the length
+
                         if i % 3 == 0:
                             Product.objects.create(
                                 vendor=new_vendor,
@@ -207,6 +209,9 @@ class Command(BaseCommand):
 
         # Format the date in 'YYYY-MM-DDTHH:MM:SS' format
         formatted_expiry_date = expiry_date.strftime('%Y-%m-%dT%H:%M:%S')
+
+        kl_timezone = pytz.timezone('Asia/Kuala_Lumpur')
+        formatted_expiry_date = kl_timezone.localize(datetime.strptime(formatted_expiry_date, '%Y-%m-%dT%H:%M:%S'))
 
         return formatted_expiry_date
     

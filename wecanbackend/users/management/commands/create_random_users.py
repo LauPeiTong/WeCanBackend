@@ -9,12 +9,38 @@ fake = Faker()
 
 User = get_user_model()
 
+address_choices = ['Jalan PJU 1a/4a, Ara Damansara, Petaling Jaya, Selangor, Malaysia',
+                   'Jalan PJU 10/1b, Damansara Damai, Petaling Jaya, Selangor, Malaysia',
+                   'Jalan PJU 10/1b, Damansara Damai, Petaling Jaya, Selangor, Malaysia',
+                   'Jalan PJU 10/1b, Damansara Damai, Petaling Jaya, Selangor, Malaysia',
+                   'Sunway Serene, Petaling Jaya, Selangor, Malaysia',
+                   'Aman Suria, Bandar Utama, tropicana, Petaling Jaya, Selangor, Malaysia',
+                   'Kota Damansara, Petaling Jaya, Selangor, Malaysia',
+                   'Kota Damansara, Petaling Jaya, Selangor, Malaysia',
+                   'Kota Damansara, Petaling Jaya, Selangor, Malaysia',
+                   'Kota Damansara, Petaling Jaya, Selangor, Malaysia',
+                   'Kepong Baru, Kepong, Kuala Lumpur, Malaysia',
+                   'Kepong Baru, Kepong, Kuala Lumpur, Malaysia',
+                   'Kepong Baru, Kepong, Kuala Lumpur, Malaysia',
+                   'Jalan Kuching, Kepong, Kuala Lumpur, Malaysia',
+                   'Jalan Kuching, Kepong, Kuala Lumpur, Malaysia',
+                   'Jalan Kuching, Kepong, Kuala Lumpur, Malaysia',
+                   'Jalan Tun Sambanthan, KL Sentral, Kuala Lumpur, Malaysia',
+                   'East Parc Jalan 7a/62a, Bandar Menjalara, Kuala Lumpur, Malaysia',
+                   'Seksyen 98 Jalan Pantai Dalam, Pantai Dalam, Bangsar South, Kuala Lumpur, Malaysia',
+                   'Presint 12 Jalan Cendana, Putrajaya, Putrajaya, Malaysia',
+                   'Putrajaya, Putrajaya, Malaysia',
+                   'Cyberjaya, Putrajaya, Malaysia',
+                   'Presint 8, Putrajaya, Putrajaya, Malaysia'
+                ]
+
 class Command(BaseCommand):
     help = 'Create random customer data'
 
     def handle(self, *args, **options):
-        # Generate 50 random customers
-        for _ in range(5):
+        for _ in range(10):
+            random_address = random.choice(address_choices)
+
             new_customer = Customer.objects.create(
                 username=fake.user_name(),
                 password='testing/123',
@@ -23,7 +49,7 @@ class Command(BaseCommand):
                 email=fake.email(),
                 role='C',
                 phone=self.generate_malaysian_phone_number(),
-                address='Putrajaya, Malaysia',
+                address=random_address,
                 image_url='https://www.shareicon.net/data/512x512/2017/01/06/868271_user_512x512.png',
                 points=random.randint(0, 1000)
             )

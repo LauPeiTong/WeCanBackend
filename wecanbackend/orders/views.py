@@ -1,13 +1,15 @@
 # order/views.py
 
 from rest_framework import generics, permissions
-from .models import Order, OrderItem
-from .serializers import OrderSerializer, OrderItemSerializer, CustomerOrderItemSerializer
-from .permissions import IsCustomerOrVendor
 from django.core.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
+from .models import Order, OrderItem
+from .serializers import OrderSerializer, OrderItemSerializer, CustomerOrderItemSerializer
+from .permissions import IsCustomerOrVendor
+from users.serializers import VendorSerializer
 
 
 class OrderListCreateView(generics.ListCreateAPIView):
@@ -16,17 +18,51 @@ class OrderListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
+        
         if user.role == 'C':
-            return Order.objects.filter(customer=user.customer)
+            orders = Order.objects.filter(customer=user.customer)
         elif user.role == 'V':
-            return Order.objects.filter(vendor=user.vendor)
+            orders = Order.objects.filter(vendor=user.vendor)
         elif user.role == 'A':
-            return Order.objects.all()
+            orders = Order.objects.all()
         else:
             raise PermissionDenied("User does not have the required role for this operation.")
         
+        return orders
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        result = {'Pending': [], 'Processing': [], 'To Receive': [], 'Completed': [], 'Cancelled': []}
+
+        for order in queryset:
+            serializer = OrderSerializer(order)
+            order_data = serializer.data
+
+            # If the Order has a Vendor, serialize the Vendor data and add it to order_data
+            if order.vendor:
+                vendor_serializer = VendorSerializer(order.vendor)
+                vendor_data = vendor_serializer.data
+                order_data['vendor'] = vendor_data
+
+            status = order_data['status']
+
+            result[status].append(order_data)
+
+        return Response(result)
+                
     def perform_create(self, serializer):
         serializer.save(customer=self.request.user.customer)
+
+        customer = self.request.user.customer
+
+        points_earned = self.request.data.get('points', 0)
+
+        # Update the customer's points
+        customer.points += points_earned
+
+        # Save the updated customer
+        customer.save()
 
 
 class OrderRetrieveUpdateView(generics.RetrieveUpdateAPIView):
@@ -41,20 +77,41 @@ class OrderRetrieveUpdateView(generics.RetrieveUpdateAPIView):
         serializer.save()
 
 
-class CustomerOrderItemsView(APIView):
+# class CustomerOrderItemsView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def get(self, request):
+#         # Assuming you have some way to identify the customer, e.g., through authentication
+#         user = request.user  # Replace this with your actual way of getting the customer
+
+#         if user.role == 'C':
+#             # Retrieve all OrderItems for the customer
+#             order_items = OrderItem.objects.filter(order__customer=user.customer)
+
+#             # Serialize the data
+#             serializer = CustomerOrderItemSerializer(order_items, many=True)
+
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+        
+#         raise PermissionDenied("User does not have the required role for this operation.")
+    
+
+class CustomerOrderItemsStatusView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        # Assuming you have some way to identify the customer, e.g., through authentication
-        user = request.user  # Replace this with your actual way of getting the customer
+        user = request.user
 
-        if user.role == 'C':
-            # Retrieve all OrderItems for the customer
-            order_items = OrderItem.objects.filter(order__customer=user.customer)
+        orders = OrderItem.objects.filter(order__customer=user.customer.id)
+        result = {'Expired': [], 'Near Expiry': [], 'Within Shelf Life': []}
 
-            # Serialize the data
-            serializer = CustomerOrderItemSerializer(order_items, many=True)
+        for order in orders:
+            serializer = CustomerOrderItemSerializer(order)
+            order_data = serializer.data
 
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        raise PermissionDenied("User does not have the required role for this operation.")
+            status = order_data['product']['status']
+
+            result[status].append(order_data)
+
+
+        return Response(result)

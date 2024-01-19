@@ -10,7 +10,7 @@ class CustomUserAdmin(UserAdmin):
 admin.site.register(User, CustomUserAdmin)
 
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'first_name', 'last_name', 'email', 'points')  # Include other fields you want to display
+    list_display = ('id', 'username', 'latitude', 'longitude', 'email', 'points')  # Include other fields you want to display
     search_fields = ('username', 'email')  # Search fields in the related User model
 
 admin.site.register(Customer, CustomerAdmin, name='Customer')

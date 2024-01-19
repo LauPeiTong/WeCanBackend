@@ -13,8 +13,7 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ('Pending', 'Pending'),
         ('Processing', 'Processing'),
-        ('Delivering', 'Delivering'),
-        ('Ready to Pick-up', 'Ready to Pick-up'),
+        ('To Receive', 'To Receive'),
         ('Completed', 'Completed'),
         ('Cancelled', 'Cancelled'),
     ]
@@ -23,7 +22,8 @@ class Order(models.Model):
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
     
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    tax = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    tax = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, default=0.03)
+    round_up = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, default=0.0)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
@@ -42,9 +42,9 @@ class Order(models.Model):
         self.subtotal = subtotal
         
         if self.delivery_or_pickup == 'Delivery':
-            total_price = self.delivery_fee + (self.tax * self.subtotal) + self.subtotal
+            total_price = self.delivery_fee + (self.tax * self.subtotal) + self.subtotal + self.round_up
         else:
-            total_price = self.tax * self.subtotal + self.subtotal
+            total_price = self.tax * self.subtotal + self.subtotal + self.round_up
         self.total_price = total_price
 
 

@@ -1,6 +1,6 @@
 # authentication/views.py
 
-from .models import User, Vendor
+from .models import User, Vendor, Customer
 from .serializers import UserSerializer, VendorSerializer, CustomerSerializer
 
 from django.db.models import Q
@@ -117,13 +117,64 @@ class UserLogoutView(APIView):
         return Response({'detail': 'Successfully logged out.'})
 
 
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
-class UserListView(APIView):
-    def get(self, request):
-        users = User.objects.all()
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data)
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+
+    def get_serializer_class(self):
+        user = self.request.user
+
+        # Choose the appropriate serializer based on the user's role
+        if user.role == 'A':
+            return UserSerializer
+        elif user.role == 'C':
+            return CustomerSerializer
+        else:
+            return VendorSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # If user role is 'A' (admin), return all users
+        if user.role == 'A':
+            return User.objects.all()
+        elif user.role == 'C':
+            return Customer.objects.filter(id=user.customer.id)
+        else:
+            return Vendor.objects.filter(id=user.vendor.id)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+
+        # If user role is not 'A', set the user to themselves
+        if user.role != 'A':
+            serializer.save(user=user)
+        else:
+            serializer.save()
+
+    def perform_update(self, serializer):
+        user = self.request.user
+
+        # If user role is not 'A', ensure they can only update their own details
+        if user.role != 'A':
+            serializer.save(user=user)
+        else:
+            serializer.save()
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+
+        # If user role is not 'A', ensure they can only delete their own account
+        if user.role != 'A' and instance.id == user.id:
+            instance.delete()
+        elif user.role == 'A':
+            instance.delete()
+        else:
+            # User without 'A' role trying to delete another user's account
+            raise PermissionDenied("You do not have permission to delete this user.")
 
 
 class VendorListView(APIView):

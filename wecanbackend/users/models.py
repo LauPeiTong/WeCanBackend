@@ -23,8 +23,11 @@ class User(AbstractUser):
 class Vendor(User):
     CHOICES = (
         ('Restaurant', 'Restaurant'),
-        ('Convenient Store', 'Convenient Store')
+        ('Supermarket', 'Supermarket'),
+        ('Grocery', 'Grocery'),
+        ('Bakery', 'Bakery')
     )
+    
     # additional fields specific to vendors
     tags = models.JSONField(default=list)  # Storing tags as a list of strings
     rating = models.FloatField(default=0.0)
