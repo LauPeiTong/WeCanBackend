@@ -1,78 +1,51 @@
 import random
-from faker import Faker
-from users.models import Customer, Vendor
-from products.models import Product
-from orders.models import Order, OrderItem
-from django.db import transaction
 from django.core.management.base import BaseCommand
-from decimal import Decimal
+from users.models import Customer
+from donations.models import Donation
 from datetime import datetime, timedelta
 
-fake = Faker()
-
 class Command(BaseCommand):
+    help = 'Generate random donations for type "Points"'
+
+    ORGANIZATION_NAMES = [
+        'WeCan Project',
+        'The Lost Food Project',
+        'Food Aid Foundation',
+        'Malaysian Red Crescent Society (Food Aid Program)',
+        'Yayasan Food Bank Malaysia',
+        'Kechara Soup Kitchen'
+    ]
+
     def handle(self, *args, **options):
-        # Get existing customers and vendors
+        # Get all customers
         customers = Customer.objects.all()
-        vendors = Vendor.objects.all()
 
-        # Generate 10 fake orders using existing customers and vendors
-        for _ in range(10):
+        # Generate 200 random donations for type 'Points'
+        for _ in range(200):
             customer = random.choice(customers)
-            vendor = random.choice(vendors)
-            self.generate_fake_order(customer, vendor)
+            organization_name = random.choice(self.ORGANIZATION_NAMES)
+            amount = random.choice([5, 10, 20, 30])
 
-    def generate_fake_order(self, customer, vendor):
-        with transaction.atomic():
-            # Generate a random date within the past month
-            order_created_at = self.generate_random_past_date()
+            # Generate a random date within the last 30 days
+            created_at = datetime.now() - timedelta(days=random.randint(0, 30))
 
-            order_choice = random.choice([choice[0] for choice in Order.DELIVERY_OR_PICKUP_CHOICES])
-            status_choice = random.choice([choice[0] for choice in Order.STATUS_CHOICES])
-            if order_choice == 'Delivery':
-                fee = random.randint(0, 15)
-            else:
-                fee = 0
-
-            # Manually set the created_at field to the generated date
-            order = Order.objects.create(
+            # Create Donation instance
+            donation = Donation.objects.create(
                 customer=customer,
-                vendor=vendor,
-                delivery_fee=Decimal(str(fee)),
-                tax=Decimal(str(0.05)),
-                status=status_choice,
-                delivery_or_pickup=order_choice,
-                notes='',
+                organization_name=organization_name,
+                amount=amount,
+                created_at=created_at,
+                type='Points',
             )
-            order.created_at = order_created_at
-            order.save()
-            print(order_created_at)
 
-            # Get the products associated with the vendor
-            vendor_products = Product.objects.filter(vendor=vendor, expired_date__date=order_created_at.date())
+            created_at = created_at.replace(
+                hour=random.randint(7, 23),
+                minute=random.randint(0, 59),
+                second=random.randint(0, 59),
+                microsecond=0  # Reset microsecond to 0
+            )
 
-            # Generate fake order items
-            for _ in range(random.randint(1, 5)):
-                product = random.choice(vendor_products)
+            donation.created_at = created_at
+            donation.save()
 
-                # Ensure product.quantity is greater than 0
-                if product.quantity > 0:
-                    quantity = random.randint(1, min(2, product.quantity))
-                    OrderItem.objects.create(order=order, product=product, quantity=quantity)
-
-                    # Decrease product.quantity by the ordered quantity
-                    product.quantity -= quantity
-                    product.save()
-
-            # Calculate and save the total price
-            order.calculate_total_price()
-            order.save()
-
-    def generate_random_past_date(self):
-        # Generate a random number of days between 0 and 30
-        random_days = random.randint(0, 30)
-
-        # Calculate the past date
-        past_date = datetime.now() - timedelta(days=random_days)
-
-        return past_date
+        self.stdout.write(self.style.SUCCESS('Successfully generated random donations for type "Points".'))

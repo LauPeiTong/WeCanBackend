@@ -54,7 +54,27 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         instance.delete()
 
-    def get_queryset(self):
+    
+    def list(self, request, *args, **kwargs):
+        status = self.request.query_params.get('status')
+        
+        if status:
+            user = self.request.user
+
+            products = Product.objects.filter(vendor=user.vendor.id)
+            result = {'Expired': [], 'Near Expiry': [], 'Within Shelf Life': []}
+
+            for product in products:
+                serializer = ProductSerializer(product)
+                product_data = serializer.data
+
+                status = product_data['status']
+
+                result[status].append(product_data)
+
+
+            return Response(result)
+        
         recommended = self.request.query_params.get('recommended')
 
         if recommended:
@@ -62,13 +82,18 @@ class ProductViewSet(viewsets.ModelViewSet):
             recommended_products = (
                 Product.objects
                 .filter(orderitem__order__isnull=False)  # Filter products with at least one order
+                .exclude(status='Expired')
                 .annotate(num_orders=Count('orderitem__order', distinct=True))
                 .order_by('-num_orders')  # Order by the number of orders in descending order
                 .filter(num_orders__gt=0)[:20]  # Get the top 20 recommended products
             )
-            return recommended_products
+            serializer = ProductSerializer(recommended_products, many=True)
             
-        return Product.objects.all()
+            return Response(serializer.data)
+        
+        all_products = Product.objects.all()
+        serializer = ProductSerializer(all_products, many=True)
+        return Response(serializer.data)
     
     
 class VendorProductsViewSet(viewsets.ReadOnlyModelViewSet):

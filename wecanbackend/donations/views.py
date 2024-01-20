@@ -15,11 +15,30 @@ class DonationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated] # allow only authenticated users to create, update, or delete donations
 
     def list(self, request, *args, **kwargs):
-        # override the list method to add the total amount
-        response = super().list(request, *args, **kwargs) # call the original list method
-        total_amount = Donation.objects.aggregate(total_amount=Sum('amount')) # calculate the total amount of all donations
-        response.data['total_amount'] = total_amount['total_amount'] # add the total amount to the response data
-        return response # return the response with the paginated data and the total amount
+        # Check if 'total' query parameter is provided
+        include_totals = request.query_params.get('total') == 'true'
+
+        # Initialize total amounts to None
+        round_up_total_amount = points_total_amount = overall_total_amount = None
+
+        if include_totals:
+            # Calculate total amount for 'Round-up' donations
+            round_up_total_amount = Donation.objects.filter(type='Round-up').aggregate(round_up_total_amount=Sum('amount'))['round_up_total_amount']
+
+            # Calculate total amount for 'Points' donations
+            points_total_amount = Donation.objects.filter(type='Points').aggregate(points_total_amount=Sum('amount'))['points_total_amount']
+
+            # Calculate the overall total amount
+            overall_total_amount = round_up_total_amount + points_total_amount
+
+        # Add the total amounts to the response data only if include_totals is True
+        response = super().list(request, *args, **kwargs)
+        if include_totals:
+            response.data['round_up_total_amount'] = round_up_total_amount
+            response.data['points_total_amount'] = points_total_amount
+            response.data['overall_total_amount'] = overall_total_amount
+
+        return response
     
     def create(self, request, *args, **kwargs):
         # Assuming you have a Customer model with a points field

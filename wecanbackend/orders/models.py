@@ -3,6 +3,7 @@
 from django.db import models
 from users.models import Customer, Vendor
 from products.models import Product
+import math
 
 class Order(models.Model):
     DELIVERY_OR_PICKUP_CHOICES = [
@@ -33,6 +34,11 @@ class Order(models.Model):
     notes = models.TextField(blank=True, null=True)
     products = models.ManyToManyField(Product, through='OrderItem')
 
+    def calculate_round_up(self):
+        round_up = math.ceil(self.total_price) - self.total_price
+        self.total_price = math.ceil(self.total_price)
+        self.round_up = round_up
+        
     def calculate_total_price(self):
         # Calculate total price based on order items, fees, and taxes
         subtotal = 0

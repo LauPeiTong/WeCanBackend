@@ -38,7 +38,7 @@ class Command(BaseCommand):
     help = 'Create random customer data'
 
     def handle(self, *args, **options):
-        for _ in range(10):
+        for _ in range(100):
             random_address = random.choice(address_choices)
 
             new_customer = Customer.objects.create(
