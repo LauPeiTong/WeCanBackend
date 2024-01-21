@@ -151,16 +151,23 @@ class UserViewSet(viewsets.ModelViewSet):
         
     def get_vendor_summary(self):
         # Get the top 3 vendors with the highest amount of sales
-        top_vendors = Vendor.objects.annotate(total_sales=Sum('orders__total_price')).order_by('-total_sales')[:3]
+        top_vendors = Vendor.objects.annotate(total_sales=Sum('order__total_price')).order_by('-total_sales')[:3]
+        
+        # Manually construct the serialized data with total_sales
+        serialized_top_vendors = []
+        for vendor in top_vendors:
+            vendor_data = VendorSerializer(vendor).data
+            vendor_data['total_sales'] = vendor.total_sales
+            serialized_top_vendors.append(vendor_data)
 
         # Get the number of vendors based on city
         vendors_by_city = Vendor.objects.values('city').annotate(num_vendors=Count('id'))
 
         # Get the top 3 cities with the highest number of sales
-        top_cities = Vendor.objects.values('city').annotate(total_sales=Sum('orders__total_price')).order_by('-total_sales')[:3]
+        top_cities = Vendor.objects.values('city').annotate(total_sales=Sum('order__total_price')).order_by('-total_sales')[:3]
 
         return {
-            'top_vendors': VendorSerializer(top_vendors, many=True).data,
+            'top_vendors': serialized_top_vendors,
             'vendors_by_city': vendors_by_city,
             'top_cities': top_cities
         }
