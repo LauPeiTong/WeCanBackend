@@ -9,30 +9,38 @@ fake = Faker()
 
 User = get_user_model()
 
-address_choices = ['Jalan PJU 1a/4a, Ara Damansara, Petaling Jaya, Selangor, Malaysia',
-                   'Jalan PJU 10/1b, Damansara Damai, Petaling Jaya, Selangor, Malaysia',
-                   'Jalan PJU 10/1b, Damansara Damai, Petaling Jaya, Selangor, Malaysia',
-                   'Jalan PJU 10/1b, Damansara Damai, Petaling Jaya, Selangor, Malaysia',
-                   'Sunway Serene, Petaling Jaya, Selangor, Malaysia',
-                   'Aman Suria, Bandar Utama, tropicana, Petaling Jaya, Selangor, Malaysia',
-                   'Kota Damansara, Petaling Jaya, Selangor, Malaysia',
-                   'Kota Damansara, Petaling Jaya, Selangor, Malaysia',
-                   'Kota Damansara, Petaling Jaya, Selangor, Malaysia',
-                   'Kota Damansara, Petaling Jaya, Selangor, Malaysia',
-                   'Kepong Baru, Kepong, Kuala Lumpur, Malaysia',
-                   'Kepong Baru, Kepong, Kuala Lumpur, Malaysia',
-                   'Kepong Baru, Kepong, Kuala Lumpur, Malaysia',
-                   'Jalan Kuching, Kepong, Kuala Lumpur, Malaysia',
-                   'Jalan Kuching, Kepong, Kuala Lumpur, Malaysia',
-                   'Jalan Kuching, Kepong, Kuala Lumpur, Malaysia',
-                   'Jalan Tun Sambanthan, KL Sentral, Kuala Lumpur, Malaysia',
-                   'East Parc Jalan 7a/62a, Bandar Menjalara, Kuala Lumpur, Malaysia',
-                   'Seksyen 98 Jalan Pantai Dalam, Pantai Dalam, Bangsar South, Kuala Lumpur, Malaysia',
-                   'Presint 12 Jalan Cendana, Putrajaya, Putrajaya, Malaysia',
-                   'Putrajaya, Putrajaya, Malaysia',
-                   'Cyberjaya, Putrajaya, Malaysia',
-                   'Presint 8, Putrajaya, Putrajaya, Malaysia'
-                ]
+address_choices = [
+    'Jalan PJU 1a/4a, Ara Damansara, Petaling Jaya, Selangor, Malaysia',
+    'Jalan PJU 10/1b, Damansara Damai, Petaling Jaya, Selangor, Malaysia',
+    'Jalan PJU 10/1b, Damansara Damai, Petaling Jaya, Selangor, Malaysia',
+    'Jalan PJU 10/1b, Damansara Damai, Petaling Jaya, Selangor, Malaysia',
+    'Sunway Serene, Petaling Jaya, Selangor, Malaysia',
+    'Aman Suria, Bandar Utama, tropicana, Petaling Jaya, Selangor, Malaysia',
+    'Kota Damansara, Petaling Jaya, Selangor, Malaysia',
+    'Kota Damansara, Petaling Jaya, Selangor, Malaysia',
+    'Kota Damansara, Petaling Jaya, Selangor, Malaysia',
+    'Kota Damansara, Petaling Jaya, Selangor, Malaysia',
+    'Kepong Baru, Kepong, Kuala Lumpur, Malaysia',
+    'Kepong Baru, Kepong, Kuala Lumpur, Malaysia',
+    'Kepong Baru, Kepong, Kuala Lumpur, Malaysia',
+    'Jalan Kuching, Kepong, Kuala Lumpur, Malaysia',
+    'Jalan Kuching, Kepong, Kuala Lumpur, Malaysia',
+    'Jalan Kuching, Kepong, Kuala Lumpur, Malaysia',
+    'Jalan Tun Sambanthan, KL Sentral, Kuala Lumpur, Malaysia',
+    'East Parc Jalan 7a/62a, Bandar Menjalara, Kuala Lumpur, Malaysia',
+    'Seksyen 98 Jalan Pantai Dalam, Pantai Dalam, Bangsar South, Kuala Lumpur, Malaysia',
+    'Presint 12 Jalan Cendana, Putrajaya, Putrajaya, Malaysia',
+    'Putrajaya, Putrajaya, Malaysia',
+    'Cyberjaya, Putrajaya, Malaysia',
+    'Presint 8, Putrajaya, Putrajaya, Malaysia'
+]
+
+image_choices = [
+    'https://www.shareicon.net/data/512x512/2017/01/06/868271_user_512x512.png',
+    'https://www.pngall.com/wp-content/uploads/5/Profile-Avatar-PNG.png',
+    'https://mahasiswa.itp.ac.id/assets/images/user.png',
+    'https://cdn4.iconfinder.com/data/icons/avatars-21/512/avatar-circle-human-female-5-512.png'
+]
 
 class Command(BaseCommand):
     help = 'Create random customer data'
@@ -40,6 +48,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         for _ in range(100):
             random_address = random.choice(address_choices)
+            random_image = random.choice(image_choices)
 
             new_customer = Customer.objects.create(
                 username=fake.user_name(),
@@ -50,7 +59,7 @@ class Command(BaseCommand):
                 role='C',
                 phone=self.generate_malaysian_phone_number(),
                 address=random_address,
-                image_url='https://www.shareicon.net/data/512x512/2017/01/06/868271_user_512x512.png',
+                image_url=random_image,
                 points=random.randint(0, 1000)
             )
 

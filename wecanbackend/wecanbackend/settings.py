@@ -68,7 +68,8 @@ ROOT_URLCONF = 'wecanbackend.urls'
 CORS_URLS_REGEX = r"^/api/.*"
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
-    'https://wecan-user.netlify.app'
+    'https://wecan-user.netlify.app',
+    'https://wecan-vendor.netlify.app'
 ]
 
 if DEBUG:

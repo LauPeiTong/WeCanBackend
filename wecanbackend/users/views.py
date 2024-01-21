@@ -16,6 +16,8 @@ from rest_framework.decorators import permission_classes, authentication_classes
 from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth import authenticate
 from rest_framework import viewsets
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import Sum, Count
 
 import requests
 
@@ -26,6 +28,7 @@ class UserRegistrationView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
+            print(serializer)
                         
             # Check if latitude and longitude are provided
             latitude = request.data.get('latitude')
@@ -74,8 +77,12 @@ class UserRegistrationView(APIView):
                     token, created = Token.objects.get_or_create(user=user_instance)
                     return Response({'token': token.key, 'id' : user_instance.id, 'customer_data': customer_serializer.data}, status=status.HTTP_201_CREATED)
                 return Response(customer_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+            else:
+                serializer.save()
+                user_instance = serializer.instance
+                token, created = Token.objects.get_or_create(user=user_instance)
+                return Response({'token': token.key, 'id' : user_instance.id, 'admin_data': serializer.data}, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -117,11 +124,18 @@ class UserLogoutView(APIView):
         return Response({'detail': 'Successfully logged out.'})
 
 
+class UserPagination(PageNumberPagination):
+    page_size = 10  # Number of donations to be displayed per page
+    page_size_query_param = 'page_size'
+    max_page_size = 1000  # Maximum number of donations that can be requested per page
+    
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+    pagination_class = UserPagination
 
 
     def get_serializer_class(self):
@@ -134,6 +148,77 @@ class UserViewSet(viewsets.ModelViewSet):
             return CustomerSerializer
         else:
             return VendorSerializer
+        
+    def get_vendor_summary(self):
+        # Get the top 3 vendors with the highest amount of sales
+        top_vendors = Vendor.objects.annotate(total_sales=Sum('orders__total_price')).order_by('-total_sales')[:3]
+
+        # Get the number of vendors based on city
+        vendors_by_city = Vendor.objects.values('city').annotate(num_vendors=Count('id'))
+
+        # Get the top 3 cities with the highest number of sales
+        top_cities = Vendor.objects.values('city').annotate(total_sales=Sum('orders__total_price')).order_by('-total_sales')[:3]
+
+        return {
+            'top_vendors': VendorSerializer(top_vendors, many=True).data,
+            'vendors_by_city': vendors_by_city,
+            'top_cities': top_cities
+        }
+    
+    def get_customer_summary(self):
+         total_customers = Customer.objects.count()
+
+         return {
+            'total_customers': total_customers
+        }
+
+    def list(self, request, *args, **kwargs):
+        user = self.request.user
+
+        include_vendor_summary = request.query_params.get('vendorsummary') == 'true'
+        include_customer_summary = request.query_params.get('customersummary') == 'true'
+        include_vendor = request.query_params.get('vendors') == 'true'
+        include_customer = request.query_params.get('customers') == 'true'
+
+        if include_vendor_summary:
+            summary_data = self.get_vendor_summary()
+            return Response(summary_data)
+        
+        if include_customer_summary:
+            summary_data = self.get_customer_summary()
+            return Response(summary_data)
+        
+        if include_vendor:
+            vendors = Vendor.objects.all()
+
+            vendor_serializer = VendorSerializer(vendors, many=True)
+
+            data_dict = {
+                'vendors': vendor_serializer.data
+            }
+
+            return Response(data_dict)
+        
+        if include_customer:
+            customers = Customer.objects.all()
+
+            customer_serializer = CustomerSerializer(customers, many=True)
+
+            data_dict = {
+                'vendors': vendor_serializer.data
+            }
+
+            return Response(data_dict)
+        
+        else:
+            # Call super().list to get the default paginated response
+            response = super().list(request, *args, **kwargs)
+
+            # Convert the list to a dictionary
+            data_dict = {'users': response.data}
+
+            # Return the response with the modified data
+            return Response(data_dict)
 
     def get_queryset(self):
         user = self.request.user
@@ -177,6 +262,7 @@ class UserViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You do not have permission to delete this user.")
 
 
+# For customer to see the vendor list
 class VendorListView(APIView):
     def get(self, request):
         # Check if the user has a related customer
