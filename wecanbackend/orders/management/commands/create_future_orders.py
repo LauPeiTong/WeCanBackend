@@ -26,14 +26,11 @@ class Command(BaseCommand):
 
         # Loop through the last 30 days starting from today and going backward until January 23rd
         today = datetime.now()
-        end_date = datetime(2024, 1, 23)  # Change the date accordingly
+        end_date = datetime(2024, 1, 24)  # Change the date accordingly
 
-        # Make sure end_date is at most 30 days before today
-        end_date = min(end_date, today - timedelta(days=30))
+        start_date = today
 
-        start_date = today - timedelta(days=29)
-
-        while start_date >= end_date:
+        while start_date <= end_date:
             # Your existing code for each iteration
 
             # Generate fake orders using existing customers and vendors for each day
@@ -43,7 +40,7 @@ class Command(BaseCommand):
                 self.generate_fake_order(customer, vendor, start_date)
 
             # Move to the previous day
-            start_date -= timedelta(days=1)
+            start_date += timedelta(days=1)
 
     def generate_fake_order(self, customer, vendor, order_created_at):
         with transaction.atomic():
