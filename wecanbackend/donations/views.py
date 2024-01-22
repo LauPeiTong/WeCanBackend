@@ -7,7 +7,8 @@ from rest_framework.pagination import PageNumberPagination
 
 from .models import Donation
 from .serializers import DonationSerializer
-
+from users.serializers import CustomerSerializer
+from users.models import Customer
 
 # Create your views here.
 
@@ -30,6 +31,9 @@ class DonationViewSet(viewsets.ModelViewSet):
             round_up_total_amount = Donation.objects.filter(type='Round-up').aggregate(round_up_total_amount=Sum('amount'))['round_up_total_amount']
             points_total_amount = Donation.objects.filter(type='Points').aggregate(points_total_amount=Sum('amount'))['points_total_amount']
             overall_total_amount = round_up_total_amount + points_total_amount
+        
+        include_day = request.query_params.get('day') == 'true'
+        daily_totals = {}
 
         # Call super().list to get the default paginated response
         response = super().list(request, *args, **kwargs)
@@ -41,6 +45,29 @@ class DonationViewSet(viewsets.ModelViewSet):
             data_dict['round_up_total_amount'] = round_up_total_amount
             data_dict['points_total_amount'] = points_total_amount
             data_dict['overall_total_amount'] = overall_total_amount
+
+        if include_day:
+            donations = Donation.objects.all()
+            sorted_donations = sorted(donations, key=lambda donation: donation.created_at)
+
+            if sorted_donations:
+                # Manually serialize the customer field
+                for donation_data in sorted_donations:
+                    # Calculate daily totals
+                    donation_day_str = donation_data.created_at.strftime('%d %b %y')
+                    daily_totals.setdefault(donation_day_str, 0)
+                    daily_totals[donation_day_str] += donation_data.amount
+            
+            data_dict['daily_totals'] = dict(daily_totals)
+            return Response(data_dict)
+            
+        if data_dict['donations']['results']:
+            # Manually serialize the customer field
+            for donation_data in data_dict['donations']['results']:
+                customer_id = donation_data['customer']
+                customer = Customer.objects.get(id=customer_id)
+                customer_data = CustomerSerializer(customer).data
+                donation_data['customer'] = customer_data
 
         # Return the response with the modified data
         return Response(data_dict)

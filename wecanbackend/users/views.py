@@ -185,6 +185,7 @@ class UserViewSet(viewsets.ModelViewSet):
         include_vendor_summary = request.query_params.get('vendorsummary') == 'true'
         include_customer_summary = request.query_params.get('customersummary') == 'true'
         include_vendor = request.query_params.get('vendors') == 'true'
+        print(include_vendor)
         include_customer = request.query_params.get('customers') == 'true'
 
         if include_vendor_summary:
@@ -212,7 +213,7 @@ class UserViewSet(viewsets.ModelViewSet):
             customer_serializer = CustomerSerializer(customers, many=True)
 
             data_dict = {
-                'vendors': vendor_serializer.data
+                'customers': customer_serializer.data
             }
 
             return Response(data_dict)
